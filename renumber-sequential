@@ -1,0 +1,117 @@
+#!/bin/bash
+
+findexpr="*"
+prefixfname=""
+suffixfname=""
+padzeros="n"
+padlen=3
+startseq=1
+verbose=0
+
+helpmsg()
+{
+	echo "Usage: renumber_sequential [dir] options..."
+	echo "  -f, --find [pat]       only rename files with this pattern"
+	echo "  -p, --prefix [name]    prefix for all new filenames"
+	echo "  -s, --suffix [name]    suffix/extension for all new filenames"
+	echo "  -z, --padzeros         pad the new filenames with zeros"
+	echo "  -l, --padlen [num]     padding length"
+	echo "  -i, --start [num]      start sequence at number (default 1)"
+	echo "  -v, --verbose          verbose mode"
+}
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]; do
+	arg="$1"
+
+	case $arg in
+		-h|--help)
+			helpmsg
+			exit
+		;;
+		-f|--find)
+			findexpr="$2"
+			shift
+			shift
+		;;
+		-p|--prefix)
+			prefixfname="$2"
+			shift
+			shift
+		;;
+		-s|--suffix)
+			suffixfname="$2"
+			shift
+			shift
+		;;
+		-z|--padzeros)
+			padzeros="y"
+			shift
+		;;
+		-l|--padlen)
+			padlen="$2"
+			shift
+			shift
+		;;
+		-i|--start)
+			startseq="$2"
+			shift
+			shift
+		;;
+		-v|--verbose)
+			verbose=1
+			shift
+		;;
+		*)
+			POSITIONAL+=("$1")
+			shift
+		;;
+	esac
+done
+set -- "${POSITIONAL[@]}"
+
+mvargs=()
+
+[ $verbose -ge 1 ] && mvargs+=("-v")
+
+if [ $# -eq 0 ]; then
+	helpmsg
+	exit
+fi
+
+build_name()
+{
+	local counter="$1"
+
+	local newf="$directory/$prefixfname"
+	if [ "$padzeros" = "y" ]; then
+		newf="${newf}$(printf "%0${padlen}d" $counter)"
+	else
+		newf="${newf}$(printf "%d" $counter)"
+	fi
+
+	echo "${newf}${suffixfname}"
+}
+
+#strip trailing slash
+directory="${1%/}"
+
+sessionprefix="rsp-$RANDOM."
+counter=$startseq
+
+find "$directory" -maxdepth 1 -type f -name "$findexpr" -print0 | sort -zV | while IFS= read -r -d '' fname; do
+	tmpname="${sessionprefix}$counter-$(date +'%s')"
+	while [ -f "$tmpname" ]; do
+		tmpname="${sessionprefix}$counter-$(date +'%s')-$RANDOM"
+	done
+
+	mv ${mvargs[@]} -- "$fname" "$tmpname"
+	((counter++))
+done
+
+counter=$startseq
+
+find "$directory" -maxdepth 1 -type f -name "${sessionprefix}*" -print0 | sort -zV | while IFS= read -r -d '' fname; do
+	mv ${mvargs[@]} -- "$fname" "$(build_name $counter)"
+	((counter++))
+done
