@@ -60,12 +60,11 @@ mvargs=()
 [ $verbose -ge 1 ] && mvargs+=("-v")
 
 if [ $# -eq 0 ]; then
-    helpmsg
+    usage
     exit
 fi
 
-build_name()
-{
+build_name() {
     local counter="$1"
 
     local newf="$directory/$prefixfname"
@@ -85,12 +84,8 @@ sessionprefix="rsp-$RANDOM."
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "$findexpr" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-    tmpname="${sessionprefix}$counter-$(date +'%s')"
-    while [ -f "$tmpname" ]; do
-        tmpname="${sessionprefix}$counter-$(date +'%s')-$RANDOM"
-    done
-
-    mv ${mvargs[@]} -- "$fname" "$tmpname"
+    tmpname="${sessionprefix}${counter}-$(date +'%s.%N')"
+    mv ${mvargs[@]} -- "$fname" "${directory}/${tmpname}"
     ((counter++))
 done
 
