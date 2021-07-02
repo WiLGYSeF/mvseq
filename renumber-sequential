@@ -4,6 +4,7 @@ usage() {
     cat <<EOF
 Usage: renumber_sequential [options] DIR
 
+  -h, --help             shows this help menu
   -f, --find [pat]       only rename files with this pattern
   -p, --prefix [name]    prefix for all new filenames
   -s, --suffix [name]    suffix/extension for all new filenames
@@ -14,7 +15,7 @@ Usage: renumber_sequential [options] DIR
 EOF
 }
 
-options=$(getopt -n renumber-sequential -o f:p:s:zl:i:v --long find:,prefix:,suffix:,padzeros,padlen:,start:,verbose -- "$@")
+options=$(getopt -n renumber-sequential -o hf:p:s:zl:i:v --long help,find:,prefix:,suffix:,padzeros,padlen:,start:,verbose -- "$@")
 eval set -- "$options"
 
 findexpr="*"
@@ -26,33 +27,32 @@ startseq=1
 verbose=0
 
 while true; do
-	case "$1" in
-		-h | --help)
-			usage ; exit 0 ;;
-		-f | --find)
-			findexpr="$2"
-			shift 2 ;;
-		-p | --prefix)
-			prefixfname="$2"
-			shift 2 ;;
-		-s | --suffix)
-			suffixfname="$2"
-			shift 2 ;;
-		-z | --padzeros)
-			padzeros="y"
-			shift ;;
-		-l | --padlen)
-			padlen="$2"
-			shift 2 ;;
-		-i | --start)
-			startseq="$2"
-			shift 2 ;;
-		-v | --verbose)
-			verbose=1
+    case "$1" in
+        -h | --help)
+            usage ; exit 0 ;;
+        -f | --find)
+            findexpr="$2"
+            shift 2 ;;
+        -p | --prefix)
+            prefixfname="$2"
+            shift 2 ;;
+        -s | --suffix)
+            suffixfname="$2"
+            shift 2 ;;
+        -z | --padzeros)
+            padzeros="y"
             shift ;;
-		--) shift; break ;;
-		;;
-	esac
+        -l | --padlen)
+            padlen="$2"
+            shift 2 ;;
+        -i | --start)
+            startseq="$2"
+            shift 2 ;;
+        -v | --verbose)
+            verbose=1
+            shift ;;
+        --) shift; break ;;
+    esac
 done
 
 mvargs=()
@@ -60,22 +60,22 @@ mvargs=()
 [ $verbose -ge 1 ] && mvargs+=("-v")
 
 if [ $# -eq 0 ]; then
-	helpmsg
-	exit
+    helpmsg
+    exit
 fi
 
 build_name()
 {
-	local counter="$1"
+    local counter="$1"
 
-	local newf="$directory/$prefixfname"
-	if [ "$padzeros" = "y" ]; then
-		newf="${newf}$(printf "%0${padlen}d" $counter)"
-	else
-		newf="${newf}$(printf "%d" $counter)"
-	fi
+    local newf="$directory/$prefixfname"
+    if [ "$padzeros" = "y" ]; then
+        newf="${newf}$(printf "%0${padlen}d" $counter)"
+    else
+        newf="${newf}$(printf "%d" $counter)"
+    fi
 
-	echo "${newf}${suffixfname}"
+    echo "${newf}${suffixfname}"
 }
 
 #strip trailing slash
@@ -85,18 +85,18 @@ sessionprefix="rsp-$RANDOM."
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "$findexpr" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-	tmpname="${sessionprefix}$counter-$(date +'%s')"
-	while [ -f "$tmpname" ]; do
-		tmpname="${sessionprefix}$counter-$(date +'%s')-$RANDOM"
-	done
+    tmpname="${sessionprefix}$counter-$(date +'%s')"
+    while [ -f "$tmpname" ]; do
+        tmpname="${sessionprefix}$counter-$(date +'%s')-$RANDOM"
+    done
 
-	mv ${mvargs[@]} -- "$fname" "$tmpname"
-	((counter++))
+    mv ${mvargs[@]} -- "$fname" "$tmpname"
+    ((counter++))
 done
 
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "${sessionprefix}*" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-	mv ${mvargs[@]} -- "$fname" "$(build_name $counter)"
-	((counter++))
+    mv ${mvargs[@]} -- "$fname" "$(build_name $counter)"
+    ((counter++))
 done
