@@ -80,11 +80,11 @@ build_name() {
 #strip trailing slash
 directory="${1%/}"
 
-sessionprefix="rsp-$RANDOM."
+sessionprefix="rsp-$(date +'%s')."
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "$findexpr" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-    tmpname="${sessionprefix}${counter}-$(date +'%s.%N')"
+    tmpname="${sessionprefix}-${counter}"
     mv ${mvargs[@]} -- "$fname" "${directory}/${tmpname}"
     ((counter++))
 done
