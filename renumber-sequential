@@ -1,5 +1,22 @@
 #!/bin/bash
 
+usage() {
+    cat <<EOF
+Usage: renumber_sequential [options] DIR
+
+  -f, --find [pat]       only rename files with this pattern
+  -p, --prefix [name]    prefix for all new filenames
+  -s, --suffix [name]    suffix/extension for all new filenames
+  -z, --padzeros         pad the new filenames with zeros
+  -l, --padlen [num]     padding length
+  -i, --start [num]      start sequence at number (default 1)
+  -v, --verbose          verbose mode
+EOF
+}
+
+options=$(getopt -n renumber-sequential -o f:p:s:zl:i:v --long find:,prefix:,suffix:,padzeros,padlen:,start:,verbose -- "$@")
+eval set -- "$options"
+
 findexpr="*"
 prefixfname=""
 suffixfname=""
@@ -8,67 +25,35 @@ padlen=3
 startseq=1
 verbose=0
 
-helpmsg()
-{
-	echo "Usage: renumber_sequential [dir] options..."
-	echo "  -f, --find [pat]       only rename files with this pattern"
-	echo "  -p, --prefix [name]    prefix for all new filenames"
-	echo "  -s, --suffix [name]    suffix/extension for all new filenames"
-	echo "  -z, --padzeros         pad the new filenames with zeros"
-	echo "  -l, --padlen [num]     padding length"
-	echo "  -i, --start [num]      start sequence at number (default 1)"
-	echo "  -v, --verbose          verbose mode"
-}
-
-POSITIONAL=()
-while [[ $# -gt 0 ]]; do
-	arg="$1"
-
-	case $arg in
-		-h|--help)
-			helpmsg
-			exit
-		;;
-		-f|--find)
+while true; do
+	case "$1" in
+		-h | --help)
+			usage ; exit 0 ;;
+		-f | --find)
 			findexpr="$2"
-			shift
-			shift
-		;;
-		-p|--prefix)
+			shift 2 ;;
+		-p | --prefix)
 			prefixfname="$2"
-			shift
-			shift
-		;;
-		-s|--suffix)
+			shift 2 ;;
+		-s | --suffix)
 			suffixfname="$2"
-			shift
-			shift
-		;;
-		-z|--padzeros)
+			shift 2 ;;
+		-z | --padzeros)
 			padzeros="y"
-			shift
-		;;
-		-l|--padlen)
+			shift ;;
+		-l | --padlen)
 			padlen="$2"
-			shift
-			shift
-		;;
-		-i|--start)
+			shift 2 ;;
+		-i | --start)
 			startseq="$2"
-			shift
-			shift
-		;;
-		-v|--verbose)
+			shift 2 ;;
+		-v | --verbose)
 			verbose=1
-			shift
-		;;
-		*)
-			POSITIONAL+=("$1")
-			shift
+            shift ;;
+		--) shift; break ;;
 		;;
 	esac
 done
-set -- "${POSITIONAL[@]}"
 
 mvargs=()
 
