@@ -2,7 +2,7 @@
 
 usage() {
     cat <<EOF
-Usage: renumber_sequential [options] DIR
+Usage: mvseq [options] DIR
 
   -h, --help             shows this help menu
   -f, --find [pat]       only rename files with this pattern
@@ -15,7 +15,7 @@ Usage: renumber_sequential [options] DIR
 EOF
 }
 
-options=$(getopt -n renumber-sequential -o hf:p:s:zl:i:v --long help,find:,prefix:,suffix:,padzeros,padlen:,start:,verbose -- "$@")
+options=$(getopt -n mvseq -o hf:p:s:zl:i:v --long help,find:,prefix:,suffix:,padzeros,padlen:,start:,verbose -- "$@")
 eval set -- "$options"
 
 findexpr="*"
@@ -69,9 +69,9 @@ build_name() {
 
     local newf="$directory/$prefixfname"
     if [ "$padzeros" = "y" ]; then
-        newf="${newf}$(printf "%0${padlen}d" $counter)"
+        newf="${newf}$(printf "%0${padlen}d" "$counter")"
     else
-        newf="${newf}$(printf "%d" $counter)"
+        newf="${newf}$(printf "%d" "$counter")"
     fi
 
     echo "${newf}${suffixfname}"
@@ -80,11 +80,11 @@ build_name() {
 #strip trailing slash
 directory="${1%/}"
 
-sessionprefix="rsp-$(date +'%s')."
+sessionprefix="mvseq-$(date +'%s')."
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "$findexpr" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-    tmpname="${sessionprefix}-${counter}"
+    tmpname="${sessionprefix}${counter}"
     mv ${mvargs[@]} -- "$fname" "${directory}/${tmpname}"
     ((counter++))
 done
@@ -92,6 +92,6 @@ done
 counter=$startseq
 
 find "$directory" -maxdepth 1 -type f -name "${sessionprefix}*" -print0 | sort -zV | while IFS= read -r -d '' fname; do
-    mv ${mvargs[@]} -- "$fname" "$(build_name $counter)"
+    mv ${mvargs[@]} -- "$fname" "$(build_name "$counter")"
     ((counter++))
 done
